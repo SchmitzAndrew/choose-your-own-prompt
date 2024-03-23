@@ -32,7 +32,7 @@ fortune, or will you turn back and leave the map to gather dust for \
 another day?`;
   return (
     <main
-      className="flex min-h-screen flex-col items-center justify-between p-16"
+      className="flex min-h-screen flex-col items-center justify-between p-12"
       style={backgroundGradient}
     >
       <Stage text={stage} />

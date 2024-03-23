@@ -6,9 +6,9 @@ export async function POST(req:NextRequest, res: NextResponse) {
     const { story } = data;
 
     //pass story into fastapi backend
-    const backendURl = 'process.env.BACKEND_URL
+    const backendURL = await process.env.BACKEND_URL + "/gen-story-prompt" || "";
     try{
-        const storyPrompt = await fetch(backendURl, {
+        const storyPrompt = await fetch(backendURL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
