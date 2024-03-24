@@ -14,10 +14,4 @@ The parchment is yellowed with age, the ink faded and smudged, but \
 there's no mistaking the unmistakable markings that point to a remote \
 island deep in the heart of the Caribbean. As you trace your finger \
 along the lines, plotting your course, you can't help but wonder what \
-dangers lie ahead. Will you encounter rival pirates hell-bent on \
-claiming the treasure for themselves? Will you face treacherous storms, \
-hidden traps, or ancient curses? Or will you emerge victorious, with \
-riches beyond your wildest dreams? The choice is yours, me hearties. So, \
-what'll it be? Will you set sail in search of Blackbeard's fabled \
-fortune, or will you turn back and leave the map to gather dust for \
-another day?`;
+dangers lie ahead.`;

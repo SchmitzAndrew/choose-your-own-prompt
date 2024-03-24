@@ -6,9 +6,6 @@ import Decisions from "@/components/Decisions";
 import { stage } from "@/lib/stage";
 
 export default function Home() {
-  const backgroundGradient = {
-    background: "linear-gradient(90deg, #8360c3 0%, #2ebf91 100%)",
-  };
 
   const [story, setStory] = useState<Array<string>>([stage]);
   const [wasDecisionMade, setWasDecisionMade] = useState(false);
@@ -24,10 +21,8 @@ export default function Home() {
     // Perform any action that depends on the updated decisions here
   }, [currentDecisions]);
 
-
-
   const setDecisions = async (currentStory: Array<string>) => {
-    console.log("Start creating more decisions")
+    console.log("Start creating more decisions");
     // Fetch decisions based on the current story
     // This is a simplified version. Implement fetching logic as per your API.
     const response = await fetch("/api/backend/gen-decisions", {
@@ -58,21 +53,21 @@ export default function Home() {
     } catch (error) {
       console.error("Error, failed to fetch new story part", error);
     }
-  }
+  };
 
   const handleDecisionSelect = async (decision: string) => {
     addStoryElement(decision);
     setWasDecisionMade(true);
     await addNewStoryElement([...story, decision]);
 
-    setDecisions([...story, decision])
+    setDecisions([...story, decision]);
     setWasDecisionMade(false);
-    
   };
-  
+
   useEffect(() => {
     // Initial setup if needed, e.g., fetch the first set of decisions
-    if (story.length == 1) { // Adjust based on when you want to fetch new decisions
+    if (story.length == 1) {
+      // Adjust based on when you want to fetch new decisions
       setDecisions(story);
     }
   }, []);
@@ -82,10 +77,8 @@ export default function Home() {
     const shouldContinue = !shouldStopGenerating(story);
     if (shouldContinue) {
       setDecisions(story);
-  }
-    
+    }
   }, [story]);
-  
 
   async function shouldStopGenerating(
     currentStory: Array<string>
@@ -95,26 +88,27 @@ export default function Home() {
 
   return (
     <main
-      className="flex min-h-screen flex-col items-center justify-between p-12"
-      style={backgroundGradient}
+      className="flex min-h-screen flex-col items-center justify-between p-12 backgroundpirate" 
     >
-      <div className="grow w-full rounded-xl backdrop-blur-xl justify-center items-center flex flex-col bg-white/80">
-      {story.map((part, index) => (
-        <div key={index}>
-          <Stage text={part} image="" />
-          {/* Render decisions after the last part of the story */}
-          {index === story.length - 1 && currentDecisions && (
-            <Decisions
-              decisions={currentDecisions}
-              onSelect={handleDecisionSelect}
-              disabled={wasDecisionMade}
-            />
-          )}
-        </div>
-      ))}
-    </div>
+      <div className="grow w-full rounded-xl backdrop-blur-xl my-12 justify-center items-center flex flex-col bg-white/80">
+        <img
+          src="https://media.discordapp.net/attachments/1220536612522557461/1221529474093547712/62e28fec-30cb-4ca1-85f4-5e4369cfca84.png?ex=6612e8f9&is=660073f9&hm=be112270a00ac05b4c3aa2b716066212f053fcd6504ecc54d0d4ca1e82623b64&=&format=webp&quality=lossless&width=957&height=655"
+          className="rounded-md h-56 mt-6"
+        />
+        {story.map((part, index) => (
+          <div key={index}>
+            <Stage text={part} image="" />
+            {/* Render decisions after the last part of the story */}
+            {index === story.length - 1 && currentDecisions && (
+              <Decisions
+                decisions={currentDecisions}
+                onSelect={handleDecisionSelect}
+                disabled={wasDecisionMade}
+              />
+            )}
+          </div>
+        ))}
+      </div>
     </main>
   );
 }
-
-
