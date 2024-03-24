@@ -8,7 +8,7 @@ export default function Stage({
 }) {
   return (
     <>
-      <img src={image} className="rounded-md h-64" />
+      <img src={image} className="rounded-md h-auto" />
       <p className="text-center mx-24">
         <Balancer>{text}</Balancer>
       </p>

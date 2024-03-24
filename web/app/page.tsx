@@ -31,7 +31,7 @@ export default function Home() {
     })
       .then((response) => response.json())
       .then((data) => {
-        setCurrentDecisions(data.decisions);
+        setCurrentDecisions(data);
         setWasDecisionMade(false);
       })
       .catch((error) =>
@@ -56,7 +56,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (!!continueGeneratingStory) {
+    if (!continueGeneratingStory) {
       return;
     }
     const generateStoryElement = async () => {
@@ -106,13 +106,13 @@ export default function Home() {
     >
       <div className="grow w-full rounded-xl backdrop-blur-xl justify-center items-center flex flex-col bg-white/80">
         <Stage text={stage} image="" />
-        `{currentDecisions && (
+        {currentDecisions && (
           <Decisions
             decisions={currentDecisions}
             onSelect={handleDecisionSelect}
             disabled={wasDecisionMade}
           />
-        )}`
+        )}
         {story.slice(2).map((part, index) => (
           <Stage key={index} text={part} image="" />
           
