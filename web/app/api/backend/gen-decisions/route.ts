@@ -16,9 +16,7 @@ export async function POST(req:NextRequest, res: NextResponse) {
                 },
                 body: JSON.stringify({story})
             });
-            console.log('PRINT RAW RESPONSE')
             const decisions = await  response.json(); // This line extracts the JSON body content of the response
-            console.log('decisions in route: ', decisions)
         return new NextResponse(JSON.stringify({decisions}), {status: 200});
     } catch (error) {
         console.error('Error from fastapi backend ', error )

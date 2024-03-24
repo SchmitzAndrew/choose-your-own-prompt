@@ -15,6 +15,7 @@ export default function Decisions({
         <Button
           key={index}
           onClick={() => onSelect(decision)}
+          className="overflow-visible"
           disabled={disabled}
           variant="outline"
         >
