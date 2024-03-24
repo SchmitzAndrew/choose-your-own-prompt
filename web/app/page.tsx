@@ -1,14 +1,11 @@
 "use client";
 
-import { useCompletion } from 'ai/react';
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Stage from "@/components/Stage";
 import Decisions from "@/components/Decisions";
 import { stage } from "@/lib/stage";
-import Completion from './examples/completion/page';
 
 export default function Home() {
- 
   const backgroundGradient = {
     background: "linear-gradient(90deg, #8360c3 0%, #2ebf91 100%)",
   };
@@ -22,14 +19,9 @@ export default function Home() {
   const [intialDecisions, setIntialDecisions] = useState(null);
   const [initialDecisionMade, setInitialDecisionMade] = useState(false);
   const [continueGeneratingStory, setContinueGeneratingStory] = useState(false);
+  const [currentDecisions, setCurrentDecisions] = useState(null);
 
-  const { complete } = useCompletion({
-    api: '/api/completion',
-  });
-  // Generate the initial decisions
   useEffect(() => {
-    console.log("Story in useEffect ", story);
-
     fetch("/api/backend/gen-decisions", {
       method: "POST",
       headers: {
@@ -38,7 +30,6 @@ export default function Home() {
       body: JSON.stringify({ story: story }),
     })
       .then((response) => {
-        console.log("Response received: ", response);
         return response.json();
       })
       .then((data) => setIntialDecisions(data.decisions))
@@ -47,15 +38,25 @@ export default function Home() {
       );
   }, []);
 
-  console.log("Intial Decisions: ", intialDecisions);
-
   const handleDecisionSelect = (decision: string) => {
-    console.log("Selected decision: ", decision);
     setStory((currentStory) => [...story, decision]);
-    console.log("Story after decision: ", story);
-    setInitialDecisionMade(true);
 
-    // Start the while loop for generating the story
+    fetch("/api/backend/gen-decisions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ story: [...story, decision] }),
+    })
+      .then((response) => {
+        return response.json();
+      })
+      .then((data) => setCurrentDecisions(data.decisions)) // Here's the change
+      .catch((error) =>
+        console.error("Error, failed to generate decisions", error)
+      );
+
+    setInitialDecisionMade(true);
     setContinueGeneratingStory(true);
   };
 
@@ -63,59 +64,39 @@ export default function Home() {
     if (!initialDecisionMade || !continueGeneratingStory) {
       return;
     }
-
     const generateStoryElement = async () => {
       const newElement = await fetchNewStoryElement(story);
-
+      console.log("NEW ELEMENT", newElement);
       if (newElement) {
-        setStory((currentStory) => [...currentStory, newElement]);
+        addStoryElement(newElement);
       }
-
+      console.log("STORY", story);
       if (await shouldStopGenerating(story)) {
         setContinueGeneratingStory(false);
       }
     };
     generateStoryElement();
-  }, [story, initialDecisionMade, continueGeneratingStory]);
+  }, [initialDecisionMade, continueGeneratingStory]);
 
   async function fetchNewStoryElement(
     currentStory: Array<string>
   ): Promise<string> {
     let newStoryElement = "";
-    let systemPrompt = "";
-
     try {
-      const response = await fetch("/api/backend/gen-story-prompt", {
+      const response = await fetch("/api/backend/gen-story", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ story: currentStory }),
       });
-      console.log("Response received: ", response);
       const data = await response.json();
-      console.log("DATA: ", data);
-      systemPrompt = data.systemPrompt;
+      newStoryElement = data.returnedStory;
     } catch (error) {
-      console.error("Error, failed to fetch system prompt", error);
+      console.error("Error, failed to fetch new story part", error);
     }
-    console.log("RETURNED SYSTEM PROMPT: ", systemPrompt);
-
-    const checkAndPublish = useCallback(
-      async (c: string) => {
-        const completion = await complete(c);
-        if (!completion) throw new Error('Failed to check typos');
-        const typos = JSON.parse(completion);
-        // you should add more validation here to make sure the response is valid
-        if (typos?.length && !window.confirm('Typos found… continue?')) return;
-        else alert('Post published');
-      },
-      [complete],
-    );
-    checkAndPublish(systemPrompt);
     return newStoryElement;
   }
-
   async function shouldStopGenerating(
     currentStory: Array<string>
   ): Promise<Boolean> {
@@ -127,15 +108,17 @@ export default function Home() {
       style={backgroundGradient}
     >
       <div className="grow w-full rounded-xl backdrop-blur-xl justify-center items-center flex flex-col bg-white/80">
-        <output>{}</output>
         <Stage text={stage} image="" />
-        {intialDecisions && (
+        {currentDecisions && (
           <Decisions
-            decisions={intialDecisions}
+            decisions={currentDecisions}
             onSelect={handleDecisionSelect}
-            disabled={initialDecisionMade}
+            disabled={!initialDecisionMade}
           />
         )}
+        {story.slice(2).map((part, index) => (
+          <Stage key={index} text={part} image="" />
+        ))}
       </div>
     </main>
   );

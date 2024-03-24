@@ -11,7 +11,7 @@ export default function Decisions({
 }) {
   return (
     <div className="grid grid-cols-3 gap-4">
-      {decisions.returned_decisions.map((decision: any, index: any) => (
+      {decisions.returnedDecisions.map((decision: any, index: any) => (
         <Button
           key={index}
           onClick={() => onSelect(decision)}
