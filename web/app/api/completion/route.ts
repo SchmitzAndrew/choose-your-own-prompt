@@ -2,37 +2,29 @@ import MistralClient from '@mistralai/mistralai';
 import {
   MistralStream,
   StreamingTextResponse,
-  experimental_StreamData,
+
 } from 'ai';
- 
+
 const mistral = new MistralClient(process.env.MISTRAL_API_KEY || '');
- 
+
 export const runtime = 'edge';
- 
+
 export async function POST(req: Request) {
   // Extract the `prompt` from the body of the request
   const { prompt } = await req.json();
- 
+  console.log("prompt: ", prompt);
+
   // Ask Mistral for a streaming completion given the prompt
   const response = mistral.chatStream({
     model: 'mistral-large',
-    maxTokens: 1000,
+    maxTokens: 10000,
     messages: [{ role: 'user', content: prompt }],
   });
- 
-  // optional: use stream data
-  const data = new experimental_StreamData();
- 
-  data.append({ test: 'value' });
- 
+
+  console.log("response: ", response);
   // Convert the response into a friendly text-stream
-  const stream = MistralStream(response, {
-    onFinal(completion) {
-      data.close();
-    },
-    experimental_streamData: true,
-  });
- 
+  const stream = MistralStream(response);
+
   // Respond with the stream
-  return new StreamingTextResponse(stream, {}, data);
+  return new StreamingTextResponse(stream);
 }

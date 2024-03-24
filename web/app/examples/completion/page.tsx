@@ -1,56 +1,90 @@
 'use client';
-
+import { useCallback, useEffect, useState } from "react";
+import Stage from "@/components/Stage";
+import Decisions from "@/components/Decisions";
+import { stage } from "@/lib/stage";
 import { useCompletion } from 'ai/react';
 
 export default function Completion() {
-    const {
-        completion,
-        input,
-        stop,
-        isLoading,
-        handleInputChange,
-        handleSubmit,
-        error,
-    } = useCompletion({
+    const { complete } = useCompletion({
         api: '/api/completion',
     });
+
+    const [story, setStory] = useState(stage);
+    const addStoryElement = (newElement: string) => {
+        setStory((currentStory) => currentStory + newElement);
+    };
+
+    const [intialDecisions, setIntialDecisions] = useState(null);
+    const [initialDecisionMade, setInitialDecisionMade] = useState(false);
+    const [continueGeneratingStory, setContinueGeneratingStory] = useState(false);
+
+    // Generate the initial decisions
+    useEffect(() => {
+        fetch("/api/backend/gen-decisions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ story: story }),
+        })
+            .then((response) => {
+                console.log("Response received: ", response);
+                return response.json();
+            })
+            .then((data) => setIntialDecisions(data.decisions))
+            .catch((error) =>
+                console.error("Error, failed to generate decisions", error)
+            );
+    }, []);
+
+    const handleDecisionSelect = (decision: string) => {
+        console.log("Selected decision: ", decision);
+        setStory((currentStory) => currentStory + decision);
+        console.log("Story after decision: ", story);
+        setInitialDecisionMade(true);
+
+        
+    };
+
+    const continueStory = useCallback(
+        async (c: string) => {
+            try {
+                const completion = await complete(c);
+                console.log("Completion: ", completion);
+                if (!completion) throw new Error('Failed to generate the next part of the story.');
+                // Append the new story part to the existing story
+                if(completion.length) {
+                    addStoryElement(completion);
+                }
+                return;
+            } catch (error) {
+                console.error("Error: ", error);
+            }
+        },
+    [complete]
+    );
     return (
-        <div className="mx-auto w-full max-w-md py-24 flex flex-col stretch">
+        <div className="mx-auto w-full max-w-5xl py-12 flex flex-col stretch">
             <h4 className="text-xl font-bold text-gray-900 md:text-xl pb-4">
-                useCompletion Example
+                Story
             </h4>
-            {error && (
-                <div className="fixed top-0 left-0 w-full p-4 text-center bg-red-500 text-white">
-                    {error.message}
-                </div>
-            )}
-            <output>{completion}</output>
-            <form
-                onSubmit={handleSubmit}
-                className="fixed w-full max-w-xl bottom-0 mb-8 items-stretch flex"
-            >
-                <input
-                    className="border border-gray-300 rounded m-2 shadow-xl p-2 flex-grow"
-                    value={input}
-                    placeholder="Say something..."
-                    onChange={handleInputChange}
+            
+            {/* {intialDecisions && (
+                <Decisions
+                    decisions={intialDecisions}
+                    onSelect={handleDecisionSelect}
+                    disabled={initialDecisionMade}
                 />
-                <button
-                    disabled={isLoading}
-                    type="submit"
-                    className="inline-block bg-gray-100 hover:bg-gray-300 text-gray-700 font-semibold hover:text-white py-2 px-4 border border-gray-300 hover:border-transparent rounded m-2 disabled:opacity-50"
-                >
-                    Send
-                </button>
-                <button
-                    disabled={!isLoading}
-                    type="button"
-                    onClick={stop}
-                    className="inline-block bg-gray-100 hover:bg-gray-300 text-gray-700 font-semibold hover:text-white py-2 px-4 border border-gray-300 hover:border-transparent rounded m-2 disabled:opacity-50"
-                >
-                    Stop
-                </button>
-            </form>
+            )} */}
+            
+
+            <textarea value={story} onChange={e => setStory(e.target.value)} readOnly className="w-full h-96">
+
+            </textarea>
+            <button onClick={() => continueStory(story)}>Continue The Story</button>
+            
+            <p>{complete}</p>
         </div>
     );
 }
