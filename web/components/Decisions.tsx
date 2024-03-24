@@ -9,7 +9,7 @@ export default function Decisions({
 }) {
   return (
     <div className="grid grid-cols-3 gap-4">
-      {decisions.returnedDecisions.map((decision: any, index: any) => (
+      {decisions.map((decision: any, index: any) => (
         <button
           key={index}
           onClick={() => onSelect(decision)}
@@ -17,7 +17,7 @@ export default function Decisions({
           disabled={disabled}
           
         >
-          {decision.decisionText}
+          {decision}
         </button>
       ))}
     </div>

@@ -19,65 +19,29 @@ export default function Home() {
     setStory((currentStory) => [...currentStory, newElement]);
   };
 
+  useEffect(() => {
+    console.log("Decisions Updated", currentDecisions);
+    // Perform any action that depends on the updated decisions here
+  }, [currentDecisions]);
 
-  const fetchDecisions = (currentStory: Array<string>) => {
-    console.log("FETCHING DECISIONS", currentStory);
-    fetch("/api/backend/gen-decisions", {
+
+
+  const setDecisions = async (currentStory: Array<string>) => {
+    console.log("Start creating more decisions")
+    // Fetch decisions based on the current story
+    // This is a simplified version. Implement fetching logic as per your API.
+    const response = await fetch("/api/backend/gen-decisions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ story: currentStory }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        setCurrentDecisions(data);
-        setWasDecisionMade(false);
-      })
-      .catch((error) =>
-        console.error("Error, failed to generate decisions", error)
-      );
-    };
-  
-  // Initial fetch for decisions
-  useEffect(() => {
-    fetchDecisions(story);
-  }, [story]);
-  
-
-  const handleDecisionSelect = (decision: string) => {
-    if (wasDecisionMade)  return;
-
-    const updatedStory = [...story, decision];
-    setStory(updatedStory);
-
-    setWasDecisionMade(true);
-    setContinueGeneratingStory(true);
+    });
+    const data = await response.json();
+    setCurrentDecisions(data.decisions.returnedDecisions);
   };
 
-  useEffect(() => {
-    if (!continueGeneratingStory) {
-      return;
-    }
-    const generateStoryElement = async () => {
-      const newElement = await fetchNewStoryElement(story);
-      console.log("NEW ELEMENT", newElement);
-      if (newElement) {
-        addStoryElement(newElement);
-        // Fetch new decisions after adding the new story element
-        fetchDecisions([...story, newElement]);
-      }
-      console.log("STORY", story);
-      if (await shouldStopGenerating(story)) {
-        setContinueGeneratingStory(false);
-      }
-    };
-    generateStoryElement();
-  }, [ continueGeneratingStory, story]);
-
-  async function fetchNewStoryElement(
-    currentStory: Array<string>
-  ): Promise<string> {
+  const addNewStoryElement = async (currentStory: Array<string>) => {
     let newStoryElement = "";
     try {
       const response = await fetch("/api/backend/gen-story", {
@@ -89,35 +53,66 @@ export default function Home() {
       });
       const data = await response.json();
       newStoryElement = data.returnedStory;
+      console.log("NEW STORY ELEMENT", newStoryElement);
+      addStoryElement(newStoryElement);
     } catch (error) {
       console.error("Error, failed to fetch new story part", error);
     }
-    return newStoryElement;
   }
+
+  const handleDecisionSelect = async (decision: string) => {
+    addStoryElement(decision);
+    setWasDecisionMade(true);
+    await addNewStoryElement([...story, decision]);
+
+    setDecisions([...story, decision])
+    setWasDecisionMade(false);
+    
+  };
+  
+  useEffect(() => {
+    // Initial setup if needed, e.g., fetch the first set of decisions
+    if (story.length == 1) { // Adjust based on when you want to fetch new decisions
+      setDecisions(story);
+    }
+  }, []);
+
+  // Initial fetch for decisions
+  useEffect(() => {
+    const shouldContinue = !shouldStopGenerating(story);
+    if (shouldContinue) {
+      setDecisions(story);
+  }
+    
+  }, [story]);
+  
+
   async function shouldStopGenerating(
     currentStory: Array<string>
   ): Promise<Boolean> {
-    return currentStory.length > 8;
+    return currentStory.length > 5;
   }
+
   return (
     <main
       className="flex min-h-screen flex-col items-center justify-between p-12"
       style={backgroundGradient}
     >
       <div className="grow w-full rounded-xl backdrop-blur-xl justify-center items-center flex flex-col bg-white/80">
-        <Stage text={stage} image="" />
-        {currentDecisions && (
-          <Decisions
-            decisions={currentDecisions}
-            onSelect={handleDecisionSelect}
-            disabled={wasDecisionMade}
-          />
-        )}
-        {story.slice(2).map((part, index) => (
-          <Stage key={index} text={part} image="" />
-          
-        ))}
-      </div>
+      {story.map((part, index) => (
+        <div key={index}>
+          <Stage text={part} image="" />
+          {/* Render decisions after the last part of the story */}
+          {index === story.length - 1 && currentDecisions && (
+            <Decisions
+              decisions={currentDecisions}
+              onSelect={handleDecisionSelect}
+              disabled={wasDecisionMade}
+            />
+          )}
+        </div>
+      ))}
+    </div>
     </main>
   );
 }
