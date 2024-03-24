@@ -11,57 +11,52 @@ export default function Home() {
   };
 
   const [story, setStory] = useState<Array<string>>([stage]);
+  const [wasDecisionMade, setWasDecisionMade] = useState(false);
+  const [continueGeneratingStory, setContinueGeneratingStory] = useState(false);
+  const [currentDecisions, setCurrentDecisions] = useState(null);
 
   const addStoryElement = (newElement: string) => {
     setStory((currentStory) => [...currentStory, newElement]);
   };
 
-  const [intialDecisions, setIntialDecisions] = useState(null);
-  const [initialDecisionMade, setInitialDecisionMade] = useState(false);
-  const [continueGeneratingStory, setContinueGeneratingStory] = useState(false);
-  const [currentDecisions, setCurrentDecisions] = useState(null);
 
-  useEffect(() => {
+  const fetchDecisions = (currentStory: Array<string>) => {
+    console.log("FETCHING DECISIONS", currentStory);
     fetch("/api/backend/gen-decisions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ story: story }),
+      body: JSON.stringify({ story: currentStory }),
     })
-      .then((response) => {
-        return response.json();
+      .then((response) => response.json())
+      .then((data) => {
+        setCurrentDecisions(data.decisions);
+        setWasDecisionMade(false);
       })
-      .then((data) => setIntialDecisions(data.decisions))
       .catch((error) =>
         console.error("Error, failed to generate decisions", error)
       );
-  }, []);
+    };
+  
+  // Initial fetch for decisions
+  useEffect(() => {
+    fetchDecisions(story);
+  }, [story]);
+  
 
   const handleDecisionSelect = (decision: string) => {
-    setStory((currentStory) => [...story, decision]);
+    if (wasDecisionMade)  return;
 
-    fetch("/api/backend/gen-decisions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ story: [...story, decision] }),
-    })
-      .then((response) => {
-        return response.json();
-      })
-      .then((data) => setCurrentDecisions(data.decisions)) // Here's the change
-      .catch((error) =>
-        console.error("Error, failed to generate decisions", error)
-      );
+    const updatedStory = [...story, decision];
+    setStory(updatedStory);
 
-    setInitialDecisionMade(true);
+    setWasDecisionMade(true);
     setContinueGeneratingStory(true);
   };
 
   useEffect(() => {
-    if (!initialDecisionMade || !continueGeneratingStory) {
+    if (!!continueGeneratingStory) {
       return;
     }
     const generateStoryElement = async () => {
@@ -69,6 +64,8 @@ export default function Home() {
       console.log("NEW ELEMENT", newElement);
       if (newElement) {
         addStoryElement(newElement);
+        // Fetch new decisions after adding the new story element
+        fetchDecisions([...story, newElement]);
       }
       console.log("STORY", story);
       if (await shouldStopGenerating(story)) {
@@ -76,7 +73,7 @@ export default function Home() {
       }
     };
     generateStoryElement();
-  }, [initialDecisionMade, continueGeneratingStory]);
+  }, [ continueGeneratingStory, story]);
 
   async function fetchNewStoryElement(
     currentStory: Array<string>
@@ -109,17 +106,20 @@ export default function Home() {
     >
       <div className="grow w-full rounded-xl backdrop-blur-xl justify-center items-center flex flex-col bg-white/80">
         <Stage text={stage} image="" />
-        {currentDecisions && (
+        `{currentDecisions && (
           <Decisions
             decisions={currentDecisions}
             onSelect={handleDecisionSelect}
-            disabled={!initialDecisionMade}
+            disabled={wasDecisionMade}
           />
-        )}
+        )}`
         {story.slice(2).map((part, index) => (
           <Stage key={index} text={part} image="" />
+          
         ))}
       </div>
     </main>
   );
 }
+
+
